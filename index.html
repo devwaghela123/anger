@@ -2,17 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>The Happy Communicator</title>
+  <title>Elysian Exchange</title>
   <style>
-    /* Global Styles */
+    /* Reset and Global Styles */
     * {
-      box-sizing: border-box;
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #2c3e50, #bdc3c7);
       color: #333;
       min-height: 100vh;
       display: flex;
@@ -24,76 +24,109 @@
       text-align: center;
       margin-bottom: 20px;
     }
-    /* Container Boxes */
+    /* Container Styling */
     .container {
       background: #fff;
-      padding: 20px 30px;
       border-radius: 10px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-      max-width: 600px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      max-width: 700px;
       width: 100%;
+      padding: 30px;
       text-align: center;
     }
     .hidden {
       display: none;
     }
-    /* Buttons */
+    /* Button Styling */
     button {
-      background: #0077cc;
+      background: #e74c3c;
       color: #fff;
       border: none;
-      border-radius: 5px;
-      padding: 10px 15px;
+      padding: 12px 20px;
       margin: 10px;
-      cursor: pointer;
+      border-radius: 5px;
       font-size: 16px;
+      cursor: pointer;
       transition: background 0.3s;
     }
     button:hover {
-      background: #005fa3;
+      background: #c0392b;
     }
-    /* Text Inputs */
+    /* Input Styling */
     textarea, input[type="text"] {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       margin: 10px 0;
-      font-size: 16px;
       border: 1px solid #ccc;
       border-radius: 5px;
+      font-size: 16px;
     }
     textarea {
       resize: none;
-      height: 80px;
+      height: 100px;
     }
-    /* Drag & Drop Puzzle Styles */
-    #puzzleContainer {
-      list-style: none;
-      padding: 0;
-      margin: 20px 0;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
+    /* Timeline Styles */
+    #timeline {
+      position: relative;
+      margin: 30px 0;
+      padding-left: 40px;
     }
-    #puzzleContainer li {
-      background: #f0f8ff;
-      border: 2px solid #0077cc;
-      border-radius: 5px;
-      padding: 10px 15px;
-      margin: 5px;
-      cursor: move;
-      font-weight: bold;
-      user-select: none;
-      transition: background 0.3s, transform 0.3s;
+    /* Vertical line */
+    #timeline::before {
+      content: '';
+      position: absolute;
+      left: 20px;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: #e74c3c;
+      border-radius: 2px;
     }
-    #puzzleContainer li.dragging {
-      opacity: 0.5;
-      transform: scale(1.05);
+    .timeline-card {
+      position: relative;
+      background: #fdfdfd;
+      border-radius: 8px;
+      padding: 15px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: transform 0.3s, opacity 0.3s;
+      cursor: pointer;
     }
-    /* Success Message */
-    #successMessage {
-      font-size: 20px;
-      font-weight: bold;
-      color: #2e7d32;
+    .timeline-card:hover {
+      transform: translateY(-5px);
+    }
+    .timeline-card::before {
+      content: '';
+      position: absolute;
+      left: -30px;
+      top: 15px;
+      width: 16px;
+      height: 16px;
+      background: #e74c3c;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .card-date {
+      font-size: 14px;
+      color: #777;
+      margin-bottom: 8px;
+    }
+    .card-message {
+      font-size: 18px;
+      line-height: 1.4;
+    }
+    /* Expand/Collapse */
+    .expanded {
+      background: #fff;
+    }
+    .card-expanded {
+      font-size: 16px;
+      color: #555;
+      margin-top: 10px;
+    }
+    /* Navigation */
+    .nav-buttons {
       margin-top: 20px;
     }
   </style>
@@ -101,184 +134,135 @@
 <body>
   <!-- Landing Page -->
   <div id="landing" class="container">
-    <h1>The Happy Communicator</h1>
-    <p>Welcome! Not just a chat—unlock the secret message through a fun puzzle!</p>
+    <h1>Elysian Exchange</h1>
+    <p>A dynamic digital timeline for meaningful couple connections.</p>
     <button id="gfBtn">I'm the Girlfriend</button>
     <button id="bfBtn">I'm the Boyfriend</button>
   </div>
 
   <!-- Girlfriend Section -->
   <div id="girlfriendSection" class="container hidden">
-    <h2>Girlfriend Input</h2>
-    <textarea id="messageInput" placeholder="Enter your positive secret message..."></textarea>
-    <button id="submitMessage">Submit Message</button>
+    <h2>Enter Your Daily Reflection</h2>
+    <textarea id="reflectionInput" placeholder="Share your thoughts, feelings, or something meaningful..."></textarea>
+    <button id="submitReflection">Submit Reflection</button>
   </div>
 
   <!-- Boyfriend Section -->
   <div id="boyfriendSection" class="container hidden">
-    <h2>Decode the Message</h2>
-    <p>Reorder the words to reveal her secret message!</p>
-    <ul id="puzzleContainer"></ul>
-    <button id="checkOrder">Check Order</button>
-    <div id="successMessage" class="hidden"></div>
+    <h2>Explore Our Journey</h2>
+    <div id="timeline"></div>
+    <div class="nav-buttons">
+      <button id="backBtn">Back to Landing</button>
+    </div>
   </div>
 
   <script>
-    /* -------------------------
-       Utility Functions
-    -------------------------- */
-    // Simple shuffle function
-    function shuffleArray(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    }
+    /* ---------------------------
+       Project Overview:
+       "Elysian Exchange" is an interactive, artistic timeline for couples.
+       - Girlfriend inputs her daily reflection.
+       - Reflection is timestamped and stored in localStorage.
+       - Boyfriend sees a beautifully animated timeline of all reflections.
+       - Each timeline card uses elegant animations and hover effects.
+       - Clicking a card expands it to reveal extra details.
+       - The design is minimal, modern, and evocative—aimed at fostering deeper connection.
+    -----------------------------*/
 
-    // Function to save message to localStorage
-    function saveMessage(message) {
-      localStorage.setItem("happyMessage", message);
-    }
-
-    // Function to load message from localStorage
-    function loadMessage() {
-      return localStorage.getItem("happyMessage") || "";
-    }
-
-    /* -------------------------
-       DOM Elements
-    -------------------------- */
+    // Element references
     const landing = document.getElementById("landing");
     const gfBtn = document.getElementById("gfBtn");
     const bfBtn = document.getElementById("bfBtn");
-
+    
     const girlfriendSection = document.getElementById("girlfriendSection");
-    const messageInput = document.getElementById("messageInput");
-    const submitMessage = document.getElementById("submitMessage");
-
+    const reflectionInput = document.getElementById("reflectionInput");
+    const submitReflection = document.getElementById("submitReflection");
+    
     const boyfriendSection = document.getElementById("boyfriendSection");
-    const puzzleContainer = document.getElementById("puzzleContainer");
-    const checkOrder = document.getElementById("checkOrder");
-    const successMessage = document.getElementById("successMessage");
-
-    /* -------------------------
-       Landing Page Logic
-    -------------------------- */
+    const timeline = document.getElementById("timeline");
+    const backBtn = document.getElementById("backBtn");
+    
+    // Data storage key
+    const REFLECTIONS_KEY = "elysian_reflections";
+    
+    // Helper: Get saved reflections (array of objects with message and timestamp)
+    function getReflections() {
+      const data = localStorage.getItem(REFLECTIONS_KEY);
+      return data ? JSON.parse(data) : [];
+    }
+    
+    // Helper: Save a new reflection
+    function saveReflection(message) {
+      const reflections = getReflections();
+      reflections.push({
+        message,
+        timestamp: new Date().toISOString()
+      });
+      localStorage.setItem(REFLECTIONS_KEY, JSON.stringify(reflections));
+    }
+    
+    // Landing page button events
     gfBtn.addEventListener("click", () => {
       landing.classList.add("hidden");
       girlfriendSection.classList.remove("hidden");
     });
-
+    
     bfBtn.addEventListener("click", () => {
       landing.classList.add("hidden");
       boyfriendSection.classList.remove("hidden");
-      initPuzzle();
+      renderTimeline();
     });
-
-    /* -------------------------
-       Girlfriend Submission Logic
-    -------------------------- */
-    submitMessage.addEventListener("click", () => {
-      const msg = messageInput.value.trim();
-      if (msg === "") {
-        alert("Please enter a message!");
+    
+    // Girlfriend submission event
+    submitReflection.addEventListener("click", () => {
+      const message = reflectionInput.value.trim();
+      if (!message) {
+        alert("Please enter a reflection.");
         return;
       }
-      saveMessage(msg);
-      alert("Your message has been saved!");
+      saveReflection(message);
+      alert("Reflection saved!");
+      reflectionInput.value = "";
+      // Return to landing page
       girlfriendSection.classList.add("hidden");
       landing.classList.remove("hidden");
     });
-
-    /* -------------------------
-       Boyfriend Puzzle Logic
-    -------------------------- */
-    let originalMessage = "";
-    let scrambledWords = [];
-
-    // Initialize the puzzle on boyfriend side
-    function initPuzzle() {
-      originalMessage = loadMessage();
-      if (!originalMessage) {
-        alert("No message available. Ask your girlfriend to submit a message first!");
-        location.reload();
-        return;
-      }
-      // Split the message into words
-      const words = originalMessage.split(" ").filter(w => w);
-      // Create a scrambled copy
-      scrambledWords = shuffleArray([...words]);
-      // Render the draggable list
-      renderPuzzle();
-    }
-
-    // Render puzzle words as list items
-    function renderPuzzle() {
-      puzzleContainer.innerHTML = "";
-      scrambledWords.forEach((word, index) => {
-        const li = document.createElement("li");
-        li.setAttribute("draggable", "true");
-        li.dataset.index = index;
-        li.textContent = word;
-        puzzleContainer.appendChild(li);
-      });
-      addDragAndDrop();
-    }
-
-    // Drag and Drop Implementation
-    function addDragAndDrop() {
-      const draggables = document.querySelectorAll("#puzzleContainer li");
-      let draggedItem = null;
-      
-      draggables.forEach(item => {
-        item.addEventListener("dragstart", () => {
-          draggedItem = item;
-          item.classList.add("dragging");
-        });
-        item.addEventListener("dragend", () => {
-          draggedItem = null;
-          item.classList.remove("dragging");
-        });
-      });
-      
-      puzzleContainer.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        const afterElement = getDragAfterElement(puzzleContainer, e.clientY);
-        if (afterElement == null) {
-          puzzleContainer.appendChild(draggedItem);
-        } else {
-          puzzleContainer.insertBefore(draggedItem, afterElement);
-        }
-      });
-    }
-
-    // Helper function to get the element after the current drag position
-    function getDragAfterElement(container, y) {
-      const draggableElements = [...container.querySelectorAll("li:not(.dragging)")];
-      return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-          return { offset: offset, element: child };
-        } else {
-          return closest;
-        }
-      }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-
-    // Check if the current order matches the original message
-    checkOrder.addEventListener("click", () => {
-      const currentOrder = Array.from(puzzleContainer.children).map(li => li.textContent.trim());
-      if (currentOrder.join(" ") === originalMessage) {
-        successMessage.textContent = "Success! The decoded message is: " + originalMessage;
-        successMessage.classList.remove("hidden");
-        puzzleContainer.classList.add("hidden");
-        checkOrder.classList.add("hidden");
-      } else {
-        alert("Not quite right! Rearrange the words and try again.");
-      }
+    
+    // Back button event
+    backBtn.addEventListener("click", () => {
+      boyfriendSection.classList.add("hidden");
+      landing.classList.remove("hidden");
     });
+    
+    // Render timeline of reflections
+    function renderTimeline() {
+      const reflections = getReflections();
+      // Clear timeline
+      timeline.innerHTML = "";
+      // Sort reflections by timestamp (most recent first)
+      reflections.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      
+      reflections.forEach((item, index) => {
+        const card = document.createElement("div");
+        card.className = "timeline-card";
+        // Date formatting
+        const date = new Date(item.timestamp);
+        const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        const formattedDate = date.toLocaleDateString("en-US", options);
+        
+        card.innerHTML = `<div class="card-date">${formattedDate}</div>
+                          <div class="card-message">${item.message}</div>`;
+        // Extra hidden details (for now, just a placeholder note)
+        const details = document.createElement("div");
+        details.className = "card-expanded hidden";
+        details.textContent = "Tap to expand for more insights...";
+        card.appendChild(details);
+        // Toggle expanded/collapsed on click
+        card.addEventListener("click", () => {
+          details.classList.toggle("hidden");
+        });
+        timeline.appendChild(card);
+      });
+    }
   </script>
 </body>
 </html>
