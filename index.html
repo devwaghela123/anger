@@ -2,253 +2,205 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>The Journey of Understanding</title>
+  <title>KaleidoScope</title>
   <style>
-    /* Global Reset & Typography */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* Global Reset & Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     body {
-      font-family: 'Helvetica Neue', sans-serif;
-      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-      color: #fdfdfd;
-      min-height: 100vh;
+      background: linear-gradient(135deg, #141e30, #243b55);
+      color: #f0f0f0;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      min-height: 100vh;
       padding: 20px;
     }
-    h1, h2 { text-align: center; margin-bottom: 20px; }
-    
-    /* Container styling */
-    .container {
-      background: rgba(255,255,255,0.1);
-      border-radius: 10px;
-      padding: 30px;
-      max-width: 700px;
+    h1 {
+      margin-bottom: 20px;
+      font-size: 2.5em;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    /* Container for canvas and controls */
+    .kaleido-container {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      max-width: 800px;
       width: 100%;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.4);
       text-align: center;
-      backdrop-filter: blur(8px);
     }
-    .hidden { display: none; }
-    
-    /* Input & Button Styling */
-    textarea, input[type="text"] {
-      width: 100%;
-      padding: 15px;
-      margin: 15px 0;
-      border-radius: 5px;
-      border: none;
-      font-size: 16px;
+    /* Canvas styling */
+    #kaleidoCanvas {
+      display: block;
+      margin: 0 auto;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      background: #000;
     }
-    textarea { resize: none; height: 100px; }
-    button {
-      background: #e63946;
-      border: none;
-      padding: 12px 20px;
+    /* Controls styling */
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+    .control {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .control label {
+      margin-bottom: 5px;
+      font-size: 0.9em;
+    }
+    .control input[type="range"] {
+      -webkit-appearance: none;
+      width: 150px;
+      height: 8px;
       border-radius: 5px;
-      color: #fdfdfd;
-      font-size: 16px;
+      background: #555;
+      outline: none;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .control input[type="range"]:hover {
+      opacity: 1;
+    }
+    .control input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #e74c3c;
       cursor: pointer;
-      transition: background 0.3s;
-      margin: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
-    button:hover { background: #d62828; }
-    
-    /* Story Content */
-    #storyText {
-      font-size: 20px;
-      line-height: 1.5;
-      margin: 20px 0;
+    .control input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #e74c3c;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
-    .choice-buttons { margin-top: 20px; }
-    
-    /* Navigation */
-    .nav-buttons { margin-top: 30px; }
   </style>
 </head>
 <body>
-  <!-- Landing Page -->
-  <div id="landing" class="container">
-    <h1>The Journey of Understanding</h1>
-    <p>Welcome to an interactive narrative for couples. Choose your role.</p>
-    <button id="gfBtn">I'm the Girlfriend</button>
-    <button id="bfBtn">I'm the Boyfriend</button>
-  </div>
-  
-  <!-- Girlfriend Input Section -->
-  <div id="girlfriendSection" class="container hidden">
-    <h2>Girlfriend: Set the Scene</h2>
-    <textarea id="secretMessage" placeholder="Enter your secret message (what you truly feel)"></textarea>
-    <textarea id="punishmentMessage" placeholder="Enter the punishment if he fails to understand"></textarea>
-    <button id="submitGF">Submit & Save</button>
-  </div>
-  
-  <!-- Boyfriend Interactive Story Section -->
-  <div id="boyfriendSection" class="container hidden">
-    <h2>The Story Unfolds</h2>
-    <div id="storyText"></div>
-    <div class="choice-buttons" id="choiceButtons"></div>
-    <div class="nav-buttons">
-      <button id="backBtn">Back to Landing</button>
+  <h1>KaleidoScope</h1>
+  <div class="kaleido-container">
+    <canvas id="kaleidoCanvas" width="600" height="600"></canvas>
+    <div class="controls">
+      <div class="control">
+        <label for="symmetry">Symmetry</label>
+        <input type="range" id="symmetry" min="3" max="12" value="6">
+      </div>
+      <div class="control">
+        <label for="rotationSpeed">Rotation Speed</label>
+        <input type="range" id="rotationSpeed" min="0" max="0.1" step="0.001" value="0.01">
+      </div>
+      <div class="control">
+        <label for="colorSaturation">Color Saturation</label>
+        <input type="range" id="colorSaturation" min="0" max="100" value="80">
+      </div>
+      <div class="control">
+        <label for="lineWidth">Line Width</label>
+        <input type="range" id="lineWidth" min="1" max="10" value="2">
+      </div>
     </div>
   </div>
-  
   <script>
-    /********************************************************************
-     * The Journey of Understanding
+    /**********************************************
+     * KaleidoScope
      * 
      * Overview:
-     *  - Girlfriend inputs two things: her secret message and a punishment.
-     *  - The story is a choose-your-own-adventure narrative, defined by nodes.
-     *  - Each node has narrative text and a set of choices.
-     *  - The correct path (pre-determined in our story structure) leads to success,
-     *    where the secret message is revealed.
-     *  - Any wrong choice immediately leads to failure, and the punishment is shown.
-     *  - All data is stored in localStorage; the project is entirely in one file.
-     ********************************************************************/
-    
-    // DOM Elements
-    const landing = document.getElementById("landing");
-    const gfBtn = document.getElementById("gfBtn");
-    const bfBtn = document.getElementById("bfBtn");
-    
-    const girlfriendSection = document.getElementById("girlfriendSection");
-    const secretMessageInput = document.getElementById("secretMessage");
-    const punishmentInput = document.getElementById("punishmentMessage");
-    const submitGF = document.getElementById("submitGF");
-    
-    const boyfriendSection = document.getElementById("boyfriendSection");
-    const storyText = document.getElementById("storyText");
-    const choiceButtons = document.getElementById("choiceButtons");
-    const backBtn = document.getElementById("backBtn");
-    
-    // LocalStorage Keys
-    const SECRET_KEY = "journey_secret";
-    const PUNISHMENT_KEY = "journey_punishment";
-    
-    // Story Nodes - Each node represents a stage in the interactive story.
-    // id: unique identifier
-    // text: narrative content
-    // choices: an array of objects { text, next, correct } where:
-    //   - text: button text shown for the choice
-    //   - next: id of the next node if this choice is taken
-    //   - correct: true if this is the "correct" path
-    const storyNodes = {
-      "start": {
-        text: "You find yourself at a crossroad in a dark, moonlit forest. A sign points left and right. Which way do you go?",
-        choices: [
-          { text: "Left, towards the whispering trees", next: "node1", correct: true },
-          { text: "Right, into the echoing void", next: "fail", correct: false }
-        ]
-      },
-      "node1": {
-        text: "The path leads to a clearing where a gentle stream flows. In the distance, you hear soft music. Do you follow the sound or rest by the water?",
-        choices: [
-          { text: "Follow the music", next: "node2", correct: true },
-          { text: "Rest by the stream", next: "fail", correct: false }
-        ]
-      },
-      "node2": {
-        text: "As you follow the melody, you come upon an ancient stone bridge guarded by a riddle carved into its surface. Do you attempt to solve the riddle?",
-        choices: [
-          { text: "Yes, try to solve it", next: "node3", correct: true },
-          { text: "No, cross the bridge without solving", next: "fail", correct: false }
-        ]
-      },
-      "node3": {
-        text: "The riddle speaks of lost moments and unspoken words. You answer with careful thought. The bridge shimmers as it opens. Now, you see a luminous door ahead. Do you enter?",
-        choices: [
-          { text: "Enter the door", next: "success", correct: true },
-          { text: "Turn back, unsure", next: "fail", correct: false }
-        ]
-      },
-      // Special nodes for endings
-      "success": {
-        text: "As you step through, a warm light envelops you. A voice whispers, 'I understand.' The truth of her feelings is revealed:",
-        choices: [] // End node; the secret message will be appended.
-      },
-      "fail": {
-        text: "Your journey ends in a quiet, unresolved darkness. A somber voice speaks:",
-        choices: [] // End node; the punishment will be appended.
+     *  - This project is an interactive, generative art tool.
+     *  - It uses an HTML5 canvas to draw an evolving kaleidoscope pattern.
+     *  - Users can adjust parameters via sliders: symmetry, rotation speed, color saturation, and line width.
+     *  - The animation continuously updates using requestAnimationFrame.
+     *  - The design features a modern aesthetic with a dark gradient background and smooth transitions.
+     **********************************************/
+
+    const canvas = document.getElementById("kaleidoCanvas");
+    const ctx = canvas.getContext("2d");
+    const width = canvas.width;
+    const height = canvas.height;
+    const cx = width / 2;
+    const cy = height / 2;
+
+    // Parameters (controlled by sliders)
+    let symmetry = parseInt(document.getElementById("symmetry").value);
+    let rotationSpeed = parseFloat(document.getElementById("rotationSpeed").value);
+    let colorSaturation = document.getElementById("colorSaturation").value;
+    let lineWidth = document.getElementById("lineWidth").value;
+
+    // Update parameters on slider change
+    document.getElementById("symmetry").addEventListener("input", e => {
+      symmetry = parseInt(e.target.value);
+    });
+    document.getElementById("rotationSpeed").addEventListener("input", e => {
+      rotationSpeed = parseFloat(e.target.value);
+    });
+    document.getElementById("colorSaturation").addEventListener("input", e => {
+      colorSaturation = e.target.value;
+    });
+    document.getElementById("lineWidth").addEventListener("input", e => {
+      lineWidth = e.target.value;
+    });
+
+    // Animation variables
+    let angle = 0;
+    let frame = 0;
+
+    // Animation loop using requestAnimationFrame
+    function animate() {
+      frame++;
+      ctx.clearRect(0, 0, width, height);
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+
+      // Create kaleidoscopic effect by drawing repeated segments
+      for (let i = 0; i < symmetry; i++) {
+        ctx.save();
+        ctx.rotate((i * Math.PI * 2) / symmetry);
+        drawSegment();
+        ctx.restore();
       }
-    };
-    
-    // Landing Page Events
-    gfBtn.addEventListener("click", () => {
-      landing.classList.add("hidden");
-      girlfriendSection.classList.remove("hidden");
-    });
-    bfBtn.addEventListener("click", () => {
-      landing.classList.add("hidden");
-      boyfriendSection.classList.remove("hidden");
-      startStory();
-    });
-    
-    // Girlfriend Submission
-    submitGF.addEventListener("click", () => {
-      const secret = secretMessageInput.value.trim();
-      const punishment = punishmentInput.value.trim();
-      if (!secret || !punishment) {
-        alert("Please fill in both fields.");
-        return;
-      }
-      localStorage.setItem(SECRET_KEY, secret);
-      localStorage.setItem(PUNISHMENT_KEY, punishment);
-      alert("Your input has been saved!");
-      girlfriendSection.classList.add("hidden");
-      landing.classList.remove("hidden");
-    });
-    
-    // Back Button Event for Boyfriend
-    backBtn.addEventListener("click", () => {
-      boyfriendSection.classList.add("hidden");
-      landing.classList.remove("hidden");
-    });
-    
-    // Story Variables
-    let currentNodeId = "start";
-    
-    // Start the interactive story
-    function startStory() {
-      currentNodeId = "start";
-      renderNode(currentNodeId);
+      ctx.restore();
+      
+      // Increase angle gradually based on rotation speed
+      angle += rotationSpeed;
+      requestAnimationFrame(animate);
     }
-    
-    // Render the current story node
-    function renderNode(nodeId) {
-      const node = storyNodes[nodeId];
-      if (!node) return;
-      storyText.textContent = node.text;
-      // Clear previous choices
-      choiceButtons.innerHTML = "";
-      // If there are no choices, it's an ending node
-      if (node.choices.length === 0) {
-        if (nodeId === "success") {
-          // Append the girlfriend's secret message
-          const secret = localStorage.getItem(SECRET_KEY) || "No message provided.";
-          storyText.textContent += "\n\n" + secret;
-        } else if (nodeId === "fail") {
-          const punishment = localStorage.getItem(PUNISHMENT_KEY) || "No punishment provided.";
-          storyText.textContent += "\n\n" + punishment;
-        }
-        return;
-      }
-      // Create buttons for each choice
-      node.choices.forEach(choice => {
-        const btn = document.createElement("button");
-        btn.textContent = choice.text;
-        btn.addEventListener("click", () => {
-          // If the choice is not correct, immediately go to fail node
-          if (!choice.correct) {
-            renderNode("fail");
-          } else {
-            // Proceed to next node
-            renderNode(choice.next);
-          }
-        });
-        choiceButtons.appendChild(btn);
-      });
+
+    // Function to draw one segment of the kaleidoscope
+    function drawSegment() {
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = `hsl(${(frame * 0.5) % 360}, ${colorSaturation}%, 50%)`;
+      ctx.beginPath();
+      // Draw a random curved line for artistic effect
+      const x1 = Math.random() * width/2;
+      const y1 = Math.random() * height/2;
+      const x2 = Math.random() * width/2;
+      const y2 = Math.random() * height/2;
+      const x3 = Math.random() * width/2;
+      const y3 = Math.random() * height/2;
+      ctx.moveTo(0, 0);
+      ctx.bezierCurveTo(x1, y1, x2, y2, x3, y3);
+      ctx.stroke();
     }
+
+    // Start the animation
+    animate();
   </script>
 </body>
 </html>
