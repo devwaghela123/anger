@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Decode Her Anger - Hugging Face Powered</title>
+  <title>Decode Her Anger - Dynamic Hugging Face Edition</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -82,7 +82,7 @@
     <div id="questionContainer" style="display:none;">
       <p id="questionText"></p>
       <div id="options"></div>
-      <p>Strike Count: <span id="strikeCount">0</span> / 3</p>
+      <p>Question Count: <span id="questionCount">0</span> / 11</p>
     </div>
     <div id="resultSection" style="display:none;">
       <p id="resultText"></p>
@@ -97,7 +97,7 @@
     const girlfriendSec = document.getElementById('girlfriendSection');
     const boyfriendSec = document.getElementById('boyfriendSection');
 
-    // Girlfriend input elements
+    // Girlfriend inputs
     const angerInput = document.getElementById('angerInput');
     const punishmentInput = document.getElementById('punishmentInput');
     const submitAnger = document.getElementById('submitAnger');
@@ -107,9 +107,19 @@
     const questionContainer = document.getElementById('questionContainer');
     const questionText = document.getElementById('questionText');
     const optionsDiv = document.getElementById('options');
-    const strikeDisplay = document.getElementById('strikeCount');
+    const questionCountDisplay = document.getElementById('questionCount');
     const resultSection = document.getElementById('resultSection');
     const resultText = document.getElementById('resultText');
+
+    // --- Game Variables ---
+    let conversationLog = "";
+    let questionCount = 0;
+    const maxQuestions = 11;
+    let currentQuestion = null;
+    // Our Hugging Face API key (inserted everywhere)
+    const hfApiKey = "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";
+    // Using Hugging Face Inference API endpoint (we use distilgpt2; adjust model as needed)
+    const hfApiUrl = "https://api-inference.huggingface.co/models/distilgpt2";
 
     // --- Landing Page Logic ---
     gfBtn.addEventListener('click', () => {
@@ -143,31 +153,22 @@
       landing.style.display = 'block';
     });
 
-    // --- Boyfriend Decoding Variables ---
-    let currentQuestion = null;
-    let strikeCount = 0;
-    const maxStrikes = 3;
-    let conversationLog = ""; // Context for successive question generation
+    // --- Functions to Call Hugging Face API ---
 
-    // --- Hugging Face API Call to Generate a Question ---
+    // Generates a dynamic multiple-choice question
     async function generateQuestionHF(reasonText, log) {
-      // Using Hugging Face's Inference API endpoint for a generative model.
-      const apiUrl = "https://api-inference.huggingface.co/models/distilgpt2"; // You can change the model if needed
-      const hfApiKey = "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"; // Replace with your Hugging Face API key
-
-      // Build a prompt instructing the model to output a JSON object
       const prompt = `Context:
-Reason: "${reasonText}"
-Conversation so far: "${log}"
-Generate a multiple-choice question to help decode why she is mad. Return a valid JSON object with the keys:
-- "question": a string containing the question.
-- "options": an array of 4 string options.
-- "correctIndex": an integer between 0 and 3 indicating the correct answer.
-- "isDecoding": a boolean (true if answering correctly should immediately reveal the reason).
-Return only the JSON.`;
+Anger Reason: "${reasonText}"
+Conversation Log: "${log}"
+Generate a multiple-choice question (with 4 options) that helps the boyfriend decode why she is mad.
+Return the result as a JSON object with keys:
+  - "question": a string.
+  - "options": an array of 4 strings.
+There is no absolute "correct" answer; instead, your answer evaluation will be based on closeness to the reason.
+Do not output extra text.`;
 
       try {
-        const response = await fetch(apiUrl, {
+        const response = await fetch(hfApiUrl, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${hfApiKey}`,
@@ -182,91 +183,129 @@ Return only the JSON.`;
           throw new Error("Hugging Face API error");
         }
         const data = await response.json();
-        // The API returns an array of generated texts
+        // Assume the generated text is our JSON object
         const generatedText = data[0].generated_text.trim();
-        // Try parsing as JSON
         const questionObj = JSON.parse(generatedText);
         return questionObj;
       } catch (error) {
-        console.error("Error calling Hugging Face API:", error);
-        // Fallback default question in case of error
+        console.error("Error generating question:", error);
+        // Fallback default question
         return {
-          question: "Did you forget something important?",
-          options: ["I remembered everything", "I forgot something", "Not sure", "I was distracted"],
-          correctIndex: 1,
-          isDecoding: false
+          question: "Do you think you overlooked something important?",
+          options: ["I have a good memory", "Maybe I missed a detail", "I am sure I did nothing wrong", "Not sure at all"]
         };
       }
     }
 
-    // --- Start Decoding Process ---
+    // Evaluates the boyfriend's answer against the anger reason
+    async function evaluateAnswerHF(reasonText, log, selectedOption) {
+      const prompt = `Context:
+Anger Reason: "${reasonText}"
+Conversation Log: "${log}"
+The boyfriend answered: "${selectedOption}".
+Based on the context, determine if the boyfriend's answer is "on point" (i.e. close enough to decoding why she is mad).
+Return a valid JSON object with one key:
+  - "onPoint": either true or false.
+Do not output extra text.`;
+
+      try {
+        const response = await fetch(hfApiUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${hfApiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            inputs: prompt,
+            parameters: { max_new_tokens: 50, temperature: 0.7 }
+          })
+        });
+        if (!response.ok) {
+          throw new Error("Hugging Face API error");
+        }
+        const data = await response.json();
+        const generatedText = data[0].generated_text.trim();
+        const evalObj = JSON.parse(generatedText);
+        return evalObj;
+      } catch (error) {
+        console.error("Error evaluating answer:", error);
+        // Fallback: consider the answer not on point
+        return { onPoint: false };
+      }
+    }
+
+    // --- Game Flow Functions ---
+
+    // Starts the decoding process
     async function startDecoding() {
       const reason = localStorage.getItem('angerReason');
-      conversationLog = `Anger reason provided: "${reason}". `;
-      strikeCount = 0;
-      strikeDisplay.textContent = strikeCount;
+      conversationLog = `Anger Reason provided: "${reason}". `;
+      questionCount = 0;
+      updateQuestionCount();
       resultSection.style.display = 'none';
       questionContainer.style.display = 'block';
       await loadNextQuestion();
     }
 
-    // --- Load Next Question Using Hugging Face API ---
+    // Loads the next dynamic question
     async function loadNextQuestion() {
       const reason = localStorage.getItem('angerReason');
       currentQuestion = await generateQuestionHF(reason, conversationLog);
       conversationLog += `Generated question: "${currentQuestion.question}". `;
-      displayQuestion();
+      displayQuestion(currentQuestion);
     }
 
-    // --- Display Current Question & Options ---
-    function displayQuestion() {
-      if (!currentQuestion) {
+    // Displays the current question and its options
+    function displayQuestion(qObj) {
+      if (!qObj) {
         decodeFailure();
         return;
       }
-      questionText.textContent = currentQuestion.question;
+      questionText.textContent = qObj.question;
       optionsDiv.innerHTML = "";
-      currentQuestion.options.forEach((option, index) => {
+      qObj.options.forEach((option, index) => {
         const btn = document.createElement('button');
         btn.textContent = option;
         btn.classList.add('optionBtn');
-        btn.addEventListener('click', () => {
-          checkAnswer(index);
-        });
+        btn.addEventListener('click', () => handleAnswer(option));
         optionsDiv.appendChild(btn);
       });
     }
 
-    // --- Check the Boyfriend's Answer ---
-    async function checkAnswer(selectedIndex) {
-      conversationLog += `Boyfriend answered: "${selectedIndex}" for question "${currentQuestion.question}". `;
-      if (selectedIndex === currentQuestion.correctIndex) {
-        if (currentQuestion.isDecoding) {
-          decodeSuccess();
-          return;
-        }
-        await loadNextQuestion();
+    // Handles the boyfriend's answer
+    async function handleAnswer(selectedOption) {
+      conversationLog += `Boyfriend answered: "${selectedOption}". `;
+      // Evaluate the answer using the HF API
+      const reason = localStorage.getItem('angerReason');
+      const evalResult = await evaluateAnswerHF(reason, conversationLog, selectedOption);
+      questionCount++;
+      updateQuestionCount();
+
+      if (evalResult.onPoint === true) {
+        // If onPoint, decoding is successful
+        decodeSuccess();
+      } else if (questionCount >= maxQuestions) {
+        // Exceeded maximum questions without onPoint answer
+        decodeFailure();
       } else {
-        strikeCount++;
-        strikeDisplay.textContent = strikeCount;
-        if (strikeCount >= maxStrikes) {
-          decodeFailure();
-        } else {
-          alert("Wrong answer! Be extra careful with the next one.");
-          await loadNextQuestion();
-        }
+        // Otherwise, load next question
+        await loadNextQuestion();
       }
     }
 
-    // --- Reveal the Real Reason on Success ---
+    function updateQuestionCount() {
+      questionCountDisplay.textContent = questionCount;
+    }
+
+    // --- Game End Functions ---
+
     function decodeSuccess() {
       questionContainer.style.display = 'none';
       resultSection.style.display = 'block';
       const reason = localStorage.getItem('angerReason');
-      resultText.textContent = "Success! She is mad because: " + reason;
+      resultText.textContent = "Success! You decoded her anger. She is mad because: " + reason;
     }
 
-    // --- Reveal Punishment on Failure ---
     function decodeFailure() {
       questionContainer.style.display = 'none';
       resultSection.style.display = 'block';
