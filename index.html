@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Decode Her Anger</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      color: #333;
+      margin: 20px;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    #landing, #girlfriendSection, #boyfriendSection {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    textarea {
+      width: 100%;
+      height: 80px;
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: none;
+    }
+    button {
+      padding: 10px 15px;
+      font-size: 16px;
+      margin: 5px;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      background: #0077cc;
+      color: #fff;
+    }
+    button:hover {
+      background: #005fa3;
+    }
+    .answerBtn {
+      width: 120px;
+    }
+    #questionSection, #resultSection, #noAngerMsg {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="landing">
+    <h1>Don't know why your girlfriend is mad?</h1>
+    <p>"Don't know why she's mad? You're at the right place! She already told us why. You just have to decode it!"</p>
+    <button id="gfBtn">I'm the Girlfriend</button>
+    <button id="bfBtn">I'm the Boyfriend</button>
+  </div>
+
+  <div id="girlfriendSection" style="display:none;">
+    <h2>Girlfriend: Tell us what's wrong</h2>
+    <textarea id="angerInput" placeholder="Why are you mad?"></textarea>
+    <textarea id="punishmentInput" placeholder="Punishment if he fails to decode"></textarea>
+    <button id="submitAnger">Submit</button>
+  </div>
+
+  <div id="boyfriendSection" style="display:none;">
+    <h2>Decode the Anger</h2>
+    <div id="noAngerMsg" style="display:none;">
+      <p>She's not mad right now – enjoy the silence before the storm!</p>
+    </div>
+    <div id="questionSection" style="display:none;">
+      <p id="questionText"></p>
+      <button class="answerBtn" data-answer="yes">Yes</button>
+      <button class="answerBtn" data-answer="no">No</button>
+    </div>
+    <div id="resultSection" style="display:none;">
+      <p id="resultText"></p>
+    </div>
+  </div>
+
+  <script>
+    // Landing page buttons
+    const gfBtn = document.getElementById('gfBtn');
+    const bfBtn = document.getElementById('bfBtn');
+    const landing = document.getElementById('landing');
+    const girlfriendSec = document.getElementById('girlfriendSection');
+    const boyfriendSec = document.getElementById('boyfriendSection');
+    
+    gfBtn.addEventListener('click', () => {
+      landing.style.display = 'none';
+      girlfriendSec.style.display = 'block';
+    });
+    
+    bfBtn.addEventListener('click', () => {
+      landing.style.display = 'none';
+      boyfriendSec.style.display = 'block';
+      // Check if a reason exists
+      const storedReason = localStorage.getItem('angerReason');
+      if (!storedReason) {
+        document.getElementById('noAngerMsg').style.display = 'block';
+      } else {
+        startDecoding();
+      }
+    });
+    
+    // Girlfriend's submission
+    const submitAnger = document.getElementById('submitAnger');
+    submitAnger.addEventListener('click', () => {
+      const anger = document.getElementById('angerInput').value.trim();
+      const punishment = document.getElementById('punishmentInput').value.trim();
+      if (anger === '' || punishment === '') {
+        alert("Please fill in both fields.");
+        return;
+      }
+      localStorage.setItem('angerReason', anger);
+      localStorage.setItem('punishment', punishment);
+      alert("Your input has been recorded!");
+      // Return to landing screen after submission
+      girlfriendSec.style.display = 'none';
+      landing.style.display = 'block';
+    });
+    
+    // --------- Boyfriend Decoding Flow -----------
+    let questions = [];
+    let currentQuestionIndex = 0;
+    let strikeCount = 0;
+    const maxStrikes = 3;
+    
+    // Auto-generate questions based on the reason text
+    function generateQuestions(reasonText) {
+      const qs = [];
+      const lowerReason = reasonText.toLowerCase();
+      
+      if (lowerReason.includes("forgot")) {
+        qs.push({ question: "Did you forget something important recently?", expected: "yes" });
+      }
+      if (lowerReason.includes("birthday")) {
+        qs.push({ question: "Does it relate to a birthday or special day?", expected: "yes" });
+      }
+      if (lowerReason.includes("late") || lowerReason.includes("week")) {
+        qs.push({ question: "Was something done too late or delayed?", expected: "yes" });
+      }
+      // If no keywords found, add a default question
+      if (qs.length === 0) {
+        qs.push({ question: "Do you think you did something wrong recently?", expected: "yes" });
+      }
+      return qs;
+    }
+    
+    function startDecoding() {
+      const reason = localStorage.getItem('angerReason');
+      questions = generateQuestions(reason);
+      currentQuestionIndex = 0;
+      strikeCount = 0;
+      document.getElementById('questionSection').style.display = 'block';
+      showQuestion();
+    }
+    
+    function showQuestion() {
+      if (currentQuestionIndex >= questions.length) {
+        decodeSuccess();
+      } else {
+        const q = questions[currentQuestionIndex];
+        document.getElementById('questionText').textContent = q.question;
+      }
+    }
+    
+    // Attach answer button logic
+    const answerButtons = document.querySelectorAll('.answerBtn');
+    answerButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const answer = btn.getAttribute('data-answer');
+        checkAnswer(answer);
+      });
+    });
+    
+    function checkAnswer(answer) {
+      const q = questions[currentQuestionIndex];
+      if (answer === q.expected) {
+        // Correct answer: move to next question
+        currentQuestionIndex++;
+        if (currentQuestionIndex < questions.length) {
+          showQuestion();
+        } else {
+          decodeSuccess();
+        }
+      } else {
+        // Incorrect answer: increment strike
+        strikeCount++;
+        if (strikeCount >= maxStrikes) {
+          decodeFailure();
+        } else {
+          alert("Not quite. Try again!");
+          // Optionally, you can repeat the same question.
+        }
+      }
+    }
+    
+    function decodeSuccess() {
+      document.getElementById('questionSection').style.display = 'none';
+      document.getElementById('resultSection').style.display = 'block';
+      const reason = localStorage.getItem('angerReason');
+      document.getElementById('resultText').textContent = "Success! She is mad because: " + reason;
+    }
+    
+    function decodeFailure() {
+      document.getElementById('questionSection').style.display = 'none';
+      document.getElementById('resultSection').style.display = 'block';
+      const punishment = localStorage.getItem('punishment');
+      document.getElementById('resultText').textContent = "Decoding failed. Your punishment: " + punishment;
+    }
+  </script>
+</body>
+</html>
