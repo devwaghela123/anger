@@ -1,312 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Decode Her Anger - Dynamic Free-Text Edition (Improved)</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f9f9f9;
-      margin: 20px;
-      color: #333;
-    }
-    h1, h2 {
-      text-align: center;
-    }
-    #landing, #girlfriendSection, #boyfriendSection {
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 20px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      text-align: center;
-    }
-    textarea, input[type="text"] {
-      width: 100%;
-      margin: 10px 0;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    textarea {
-      height: 80px;
-      resize: none;
-    }
-    button {
-      padding: 10px 15px;
-      font-size: 16px;
-      margin: 5px;
-      cursor: pointer;
-      border: none;
-      border-radius: 4px;
-      background: #0077cc;
-      color: #fff;
-    }
-    button:hover {
-      background: #005fa3;
-    }
-    #questionContainer, #resultSection, #noAngerMsg {
-      margin-top: 20px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decode Her Anger</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5e1e1;
+        }
+
+        .container {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .active {
+            display: block;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+        }
+
+        button {
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #ff5252;
+        }
+
+        #conversationLog {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            height: 200px;
+            overflow-y: auto;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-  <!-- Landing Page -->
-  <div id="landing">
-    <h1>Don't know why your girlfriend is mad?</h1>
-    <p>"Don't know why she's mad? You're at the right place! She already told us why. You just have to decode it!"</p>
-    <button id="gfBtn">I'm the Girlfriend</button>
-    <button id="bfBtn">I'm the Boyfriend</button>
-  </div>
-
-  <!-- Girlfriend Section -->
-  <div id="girlfriendSection" style="display:none;">
-    <h2>Girlfriend: Tell us what's wrong</h2>
-    <textarea id="angerInput" placeholder="Why are you mad?"></textarea>
-    <textarea id="punishmentInput" placeholder="Punishment if he fails to decode"></textarea>
-    <button id="submitAnger">Submit</button>
-  </div>
-
-  <!-- Boyfriend Section -->
-  <div id="boyfriendSection" style="display:none;">
-    <h2>Decode Her Anger</h2>
-    <div id="noAngerMsg" style="display:none;">
-      <p>She's not mad right now – enjoy the silence before the storm!</p>
+    <!-- Role Selection -->
+    <div id="roleSelection">
+        <h2>Are you the...</h2>
+        <button onclick="showGirlfriendSection()">Girlfriend 😠</button>
+        <button onclick="showBoyfriendSection()">Boyfriend 😅</button>
     </div>
-    <div id="questionContainer" style="display:none;">
-      <p id="questionText"></p>
-      <!-- Free-text input for boyfriend's answer -->
-      <input type="text" id="bfAnswerInput" placeholder="Type your answer here">
-      <button id="submitBFAnswer">Submit Answer</button>
-      <p>Question Count: <span id="questionCount">0</span> / 11</p>
+
+    <!-- Girlfriend Section -->
+    <div id="girlfriendSection" class="container">
+        <h2>Why Are You Mad?</h2>
+        <textarea id="angerReason" placeholder="Enter the real reason you're angry..."></textarea>
+        <input type="text" id="punishment" placeholder="Enter the punishment for failure">
+        <button onclick="saveAnger()">Set Up Anger</button>
     </div>
-    <div id="resultSection" style="display:none;">
-      <p id="resultText"></p>
+
+    <!-- Boyfriend Section -->
+    <div id="boyfriendSection" class="container">
+        <div id="notMadMessage" class="hidden">
+            <h3>Good news! She's not mad at you... for now 😇</h3>
+        </div>
+        
+        <div id="gameInterface" class="hidden">
+            <div id="conversationLog"></div>
+            <div id="questionContainer">
+                <p id="currentQuestion"></p>
+                <input type="text" id="answerInput" placeholder="Your answer...">
+                <button onclick="submitAnswer()">Submit</button>
+            </div>
+            <p>Questions remaining: <span id="questionCounter">11</span></p>
+        </div>
+
+        <div id="resultMessage" class="hidden"></div>
     </div>
-  </div>
 
-  <script>
-    /*******************************
-    * Cautionary Comments:
-    * - This version uses the Hugging Face Inference API with a higher temperature (0.9) to encourage diverse outputs.
-    * - If the generated question is identical to the previous one, the code will retry (up to 3 attempts) before accepting it.
-    * - The conversation log is updated on each API call to influence future question generation.
-    * - The game ends if the boyfriend goes through more than 11 questions without the evaluation returning "onPoint": true.
-    *******************************/
+    <script>
+        const API_KEY = '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';
+        let conversationLog = [];
+        let currentQuestion = '';
+        let questionCount = 11;
 
-    // --- Element References ---
-    const gfBtn = document.getElementById('gfBtn');
-    const bfBtn = document.getElementById('bfBtn');
-    const landing = document.getElementById('landing');
-    const girlfriendSec = document.getElementById('girlfriendSection');
-    const boyfriendSec = document.getElementById('boyfriendSection');
-
-    // Girlfriend inputs
-    const angerInput = document.getElementById('angerInput');
-    const punishmentInput = document.getElementById('punishmentInput');
-    const submitAnger = document.getElementById('submitAnger');
-
-    // Boyfriend decoding elements
-    const noAngerMsg = document.getElementById('noAngerMsg');
-    const questionContainer = document.getElementById('questionContainer');
-    const questionText = document.getElementById('questionText');
-    const bfAnswerInput = document.getElementById('bfAnswerInput');
-    const submitBFAnswer = document.getElementById('submitBFAnswer');
-    const questionCountDisplay = document.getElementById('questionCount');
-    const resultSection = document.getElementById('resultSection');
-    const resultText = document.getElementById('resultText');
-
-    // --- Game Variables ---
-    let conversationLog = "";
-    let questionCount = 0;
-    const maxQuestions = 11;
-    let currentQuestion = null;
-    let previousQuestion = "";
-    // Hugging Face API key (inserted everywhere)
-    const hfApiKey = "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";
-    // Hugging Face Inference API endpoint using distilgpt2; you can change the model if needed.
-    const hfApiUrl = "https://api-inference.huggingface.co/models/distilgpt2";
-
-    // --- Landing Page Logic ---
-    gfBtn.addEventListener('click', () => {
-      landing.style.display = 'none';
-      girlfriendSec.style.display = 'block';
-    });
-
-    bfBtn.addEventListener('click', () => {
-      landing.style.display = 'none';
-      boyfriendSec.style.display = 'block';
-      const storedReason = localStorage.getItem('angerReason');
-      if (!storedReason) {
-        noAngerMsg.style.display = 'block';
-      } else {
-        startDecoding();
-      }
-    });
-
-    // --- Girlfriend Submission ---
-    submitAnger.addEventListener('click', () => {
-      const anger = angerInput.value.trim();
-      const punishment = punishmentInput.value.trim();
-      if (anger === '' || punishment === '') {
-        alert("Please fill in both fields.");
-        return;
-      }
-      localStorage.setItem('angerReason', anger);
-      localStorage.setItem('punishment', punishment);
-      alert("Your input has been recorded!");
-      girlfriendSec.style.display = 'none';
-      landing.style.display = 'block';
-    });
-
-    // --- Function to Call Hugging Face API to Generate a Question ---
-    async function generateQuestionHF(reasonText, log, retryCount = 0) {
-      const prompt = `Context:
-Anger Reason: "${reasonText}"
-Conversation Log: "${log}"
-Generate a unique decoding question to help the boyfriend figure out why she is mad.
-Return a valid JSON object with one key:
-  - "question": a string containing the question.
-Do not include any extra text.`;
-      
-      try {
-        const response = await fetch(hfApiUrl, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${hfApiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            inputs: prompt,
-            parameters: { max_new_tokens: 100, temperature: 0.9 }
-          })
-        });
-        if (!response.ok) {
-          throw new Error("Hugging Face API error");
+        function showGirlfriendSection() {
+            document.getElementById('roleSelection').style.display = 'none';
+            document.getElementById('girlfriendSection').classList.add('active');
         }
-        const data = await response.json();
-        const generatedText = data[0].generated_text.trim();
-        const questionObj = JSON.parse(generatedText);
-        // Check for duplicate question
-        if (questionObj.question === previousQuestion && retryCount < 3) {
-          console.warn("Duplicate question detected. Retrying...");
-          return await generateQuestionHF(reasonText, log, retryCount + 1);
+
+        function showBoyfriendSection() {
+            document.getElementById('roleSelection').style.display = 'none';
+            const bfSection = document.getElementById('boyfriendSection');
+            bfSection.classList.add('active');
+
+            const angerReason = localStorage.getItem('angerReason');
+            if (!angerReason) {
+                document.getElementById('notMadMessage').classList.remove('hidden');
+            } else {
+                document.getElementById('gameInterface').classList.remove('hidden');
+                conversationLog = JSON.parse(localStorage.getItem('conversationLog') || '[]');
+                generateNewQuestion();
+            }
         }
-        previousQuestion = questionObj.question;
-        return questionObj;
-      } catch (error) {
-        console.error("Error generating question:", error);
-        // Fallback default question if API fails
-        return { question: "Could it be that you overlooked something important?" };
-      }
-    }
 
-    // --- Function to Call Hugging Face API to Evaluate Boyfriend's Answer ---
-    async function evaluateAnswerHF(reasonText, log, answerText) {
-      const prompt = `Context:
-Anger Reason: "${reasonText}"
-Conversation Log: "${log}"
-The boyfriend answered: "${answerText}".
-Determine if this answer is "on point" (i.e., sufficiently close to decoding why she is mad).
-Return a valid JSON object with one key:
-  - "onPoint": either true or false.
-Do not include any extra text.`;
-      
-      try {
-        const response = await fetch(hfApiUrl, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${hfApiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            inputs: prompt,
-            parameters: { max_new_tokens: 50, temperature: 0.9 }
-          })
-        });
-        if (!response.ok) {
-          throw new Error("Hugging Face API error");
+        async function generateNewQuestion(retry = false) {
+            const previousQuestion = currentQuestion;
+            
+            try {
+                const response = await fetch(
+                    "https://api-inference.huggingface.co/models/distilgpt2",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${API_KEY}`,
+                            "Content-Type": "application/json"
+                        },
+                        method: "POST",
+                        body: JSON.stringify({
+                            inputs: `Generate a question to help understand why she's angry. Context: ${localStorage.getItem('angerReason')}. Previous conversation: ${conversationLog.join('\n')}`,
+                            parameters: {
+                                temperature: 0.9,
+                                max_new_tokens: 50
+                            }
+                        })
+                    }
+                );
+                
+                const result = await response.json();
+                currentQuestion = result[0]?.generated_text || "What did I do wrong?";
+                
+                if (currentQuestion === previousQuestion && retry < 3) {
+                    return generateNewQuestion(retry + 1);
+                }
+
+                document.getElementById('currentQuestion').textContent = currentQuestion;
+                conversationLog.push(`AI: ${currentQuestion}`);
+                updateConversationLog();
+            } catch (error) {
+                currentQuestion = "Can you give me a hint about what I did wrong?";
+                document.getElementById('currentQuestion').textContent = currentQuestion;
+            }
         }
-        const data = await response.json();
-        const generatedText = data[0].generated_text.trim();
-        const evalObj = JSON.parse(generatedText);
-        return evalObj;
-      } catch (error) {
-        console.error("Error evaluating answer:", error);
-        // Fallback: assume answer is not on point
-        return { onPoint: false };
-      }
-    }
 
-    // --- Game Flow Functions ---
-    async function startDecoding() {
-      const reason = localStorage.getItem('angerReason');
-      conversationLog = `Anger Reason provided: "${reason}". `;
-      questionCount = 0;
-      updateQuestionCount();
-      resultSection.style.display = 'none';
-      questionContainer.style.display = 'block';
-      bfAnswerInput.value = "";
-      await loadNextQuestion();
-    }
+        async function submitAnswer() {
+            const answer = document.getElementById('answerInput').value;
+            conversationLog.push(`You: ${answer}`);
+            updateConversationLog();
 
-    async function loadNextQuestion() {
-      const reason = localStorage.getItem('angerReason');
-      currentQuestion = await generateQuestionHF(reason, conversationLog);
-      conversationLog += `Generated question: "${currentQuestion.question}". `;
-      displayQuestion(currentQuestion);
-    }
+            const isOnPoint = await checkAnswer(answer);
+            questionCount--;
+            document.getElementById('questionCounter').textContent = questionCount;
 
-    function displayQuestion(qObj) {
-      if (!qObj || !qObj.question) {
-        decodeFailure();
-        return;
-      }
-      questionText.textContent = qObj.question;
-      bfAnswerInput.value = "";
-    }
+            if (isOnPoint || questionCount <= 0) {
+                endGame(isOnPoint);
+            } else {
+                document.getElementById('answerInput').value = '';
+                generateNewQuestion();
+            }
+        }
 
-    submitBFAnswer.addEventListener('click', async () => {
-      const answerText = bfAnswerInput.value.trim();
-      if (answerText === "") {
-        alert("Please type an answer.");
-        return;
-      }
-      conversationLog += `Boyfriend answered: "${answerText}". `;
-      const reason = localStorage.getItem('angerReason');
-      const evalResult = await evaluateAnswerHF(reason, conversationLog, answerText);
-      questionCount++;
-      updateQuestionCount();
-      
-      if (evalResult.onPoint === true) {
-        decodeSuccess();
-      } else if (questionCount >= maxQuestions) {
-        decodeFailure();
-      } else {
-        await loadNextQuestion();
-      }
-    });
+        async function checkAnswer(answer) {
+            try {
+                const response = await fetch(
+                    "https://api-inference.huggingface.co/models/distilgpt2",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${API_KEY}`,
+                            "Content-Type": "application/json"
+                        },
+                        method: "POST",
+                        body: JSON.stringify({
+                            inputs: `Determine if this answer addresses the real reason (${localStorage.getItem('angerReason')}). Answer: ${answer}. Previous conversation: ${conversationLog.join('\n')}. Respond with JSON: { "onPoint": boolean }`,
+                            parameters: {
+                                temperature: 0.7
+                            }
+                        })
+                    }
+                );
 
-    function updateQuestionCount() {
-      questionCountDisplay.textContent = questionCount;
-    }
+                const result = await response.json();
+                return result[0]?.generated_text?.includes('"onPoint": true') || false;
+            } catch (error) {
+                return false;
+            }
+        }
 
-    // --- Game End Functions ---
-    function decodeSuccess() {
-      questionContainer.style.display = 'none';
-      resultSection.style.display = 'block';
-      const reason = localStorage.getItem('angerReason');
-      resultText.textContent = "Success! You decoded her anger. She is mad because: " + reason;
-    }
+        function endGame(success) {
+            document.getElementById('gameInterface').classList.add('hidden');
+            const resultDiv = document.getElementById('resultMessage');
+            resultDiv.classList.remove('hidden');
 
-    function decodeFailure() {
-      questionContainer.style.display = 'none';
-      resultSection.style.display = 'block';
-      const punishment = localStorage.getItem('punishment');
-      resultText.textContent = "Decoding failed. Your punishment: " + punishment;
-    }
-  </script>
+            if (success) {
+                resultDiv.innerHTML = `
+                    <h3>🎉 Success! You decoded her anger! 🎉</h3>
+                    <p>Real reason: ${localStorage.getItem('angerReason')}</p>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <h3>😭 Game Over! 😭</h3>
+                    <p>Punishment: ${localStorage.getItem('punishment')}</p>
+                    <p>Real reason was: ${localStorage.getItem('angerReason')}</p>
+                `;
+            }
+
+            // Reset game state
+            localStorage.removeItem('angerReason');
+            localStorage.removeItem('punishment');
+            localStorage.removeItem('conversationLog');
+        }
+
+        function saveAnger() {
+            localStorage.setItem('angerReason', document.getElementById('angerReason').value);
+            localStorage.setItem('punishment', document.getElementById('punishment').value);
+            localStorage.setItem('conversationLog', JSON.stringify([]));
+            alert('Anger parameters set! Now send him to the boyfriend section!');
+        }
+
+        function updateConversationLog() {
+            const logDiv = document.getElementById('conversationLog');
+            logDiv.innerHTML = conversationLog.join('<br>');
+            logDiv.scrollTop = logDiv.scrollHeight;
+            localStorage.setItem('conversationLog', JSON.stringify(conversationLog));
+        }
+    </script>
 </body>
 </html>
