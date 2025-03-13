@@ -2,265 +2,251 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Elysian Exchange</title>
+  <title>The Journey of Understanding</title>
   <style>
-    /* Reset and Global Styles */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    /* Global Reset & Typography */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #2c3e50, #bdc3c7);
-      color: #333;
+      font-family: 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: #fdfdfd;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
     }
-    h1, h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    /* Container Styling */
+    h1, h2 { text-align: center; margin-bottom: 20px; }
+    
+    /* Container styling */
     .container {
-      background: #fff;
+      background: rgba(255,255,255,0.1);
       border-radius: 10px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      padding: 30px;
       max-width: 700px;
       width: 100%;
-      padding: 30px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.4);
       text-align: center;
+      backdrop-filter: blur(8px);
     }
-    .hidden {
-      display: none;
+    .hidden { display: none; }
+    
+    /* Input & Button Styling */
+    textarea, input[type="text"] {
+      width: 100%;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
     }
-    /* Button Styling */
+    textarea { resize: none; height: 100px; }
     button {
-      background: #e74c3c;
-      color: #fff;
+      background: #e63946;
       border: none;
       padding: 12px 20px;
-      margin: 10px;
       border-radius: 5px;
+      color: #fdfdfd;
       font-size: 16px;
       cursor: pointer;
       transition: background 0.3s;
+      margin: 10px;
     }
-    button:hover {
-      background: #c0392b;
+    button:hover { background: #d62828; }
+    
+    /* Story Content */
+    #storyText {
+      font-size: 20px;
+      line-height: 1.5;
+      margin: 20px 0;
     }
-    /* Input Styling */
-    textarea, input[type="text"] {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 16px;
-    }
-    textarea {
-      resize: none;
-      height: 100px;
-    }
-    /* Timeline Styles */
-    #timeline {
-      position: relative;
-      margin: 30px 0;
-      padding-left: 40px;
-    }
-    /* Vertical line */
-    #timeline::before {
-      content: '';
-      position: absolute;
-      left: 20px;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      background: #e74c3c;
-      border-radius: 2px;
-    }
-    .timeline-card {
-      position: relative;
-      background: #fdfdfd;
-      border-radius: 8px;
-      padding: 15px 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      transition: transform 0.3s, opacity 0.3s;
-      cursor: pointer;
-    }
-    .timeline-card:hover {
-      transform: translateY(-5px);
-    }
-    .timeline-card::before {
-      content: '';
-      position: absolute;
-      left: -30px;
-      top: 15px;
-      width: 16px;
-      height: 16px;
-      background: #e74c3c;
-      border-radius: 50%;
-      border: 4px solid #fff;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    .card-date {
-      font-size: 14px;
-      color: #777;
-      margin-bottom: 8px;
-    }
-    .card-message {
-      font-size: 18px;
-      line-height: 1.4;
-    }
-    /* Expand/Collapse */
-    .expanded {
-      background: #fff;
-    }
-    .card-expanded {
-      font-size: 16px;
-      color: #555;
-      margin-top: 10px;
-    }
+    .choice-buttons { margin-top: 20px; }
+    
     /* Navigation */
-    .nav-buttons {
-      margin-top: 20px;
-    }
+    .nav-buttons { margin-top: 30px; }
   </style>
 </head>
 <body>
   <!-- Landing Page -->
   <div id="landing" class="container">
-    <h1>Elysian Exchange</h1>
-    <p>A dynamic digital timeline for meaningful couple connections.</p>
+    <h1>The Journey of Understanding</h1>
+    <p>Welcome to an interactive narrative for couples. Choose your role.</p>
     <button id="gfBtn">I'm the Girlfriend</button>
     <button id="bfBtn">I'm the Boyfriend</button>
   </div>
-
-  <!-- Girlfriend Section -->
+  
+  <!-- Girlfriend Input Section -->
   <div id="girlfriendSection" class="container hidden">
-    <h2>Enter Your Daily Reflection</h2>
-    <textarea id="reflectionInput" placeholder="Share your thoughts, feelings, or something meaningful..."></textarea>
-    <button id="submitReflection">Submit Reflection</button>
+    <h2>Girlfriend: Set the Scene</h2>
+    <textarea id="secretMessage" placeholder="Enter your secret message (what you truly feel)"></textarea>
+    <textarea id="punishmentMessage" placeholder="Enter the punishment if he fails to understand"></textarea>
+    <button id="submitGF">Submit & Save</button>
   </div>
-
-  <!-- Boyfriend Section -->
+  
+  <!-- Boyfriend Interactive Story Section -->
   <div id="boyfriendSection" class="container hidden">
-    <h2>Explore Our Journey</h2>
-    <div id="timeline"></div>
+    <h2>The Story Unfolds</h2>
+    <div id="storyText"></div>
+    <div class="choice-buttons" id="choiceButtons"></div>
     <div class="nav-buttons">
       <button id="backBtn">Back to Landing</button>
     </div>
   </div>
-
+  
   <script>
-    /* ---------------------------
-       Project Overview:
-       "Elysian Exchange" is an interactive, artistic timeline for couples.
-       - Girlfriend inputs her daily reflection.
-       - Reflection is timestamped and stored in localStorage.
-       - Boyfriend sees a beautifully animated timeline of all reflections.
-       - Each timeline card uses elegant animations and hover effects.
-       - Clicking a card expands it to reveal extra details.
-       - The design is minimal, modern, and evocative—aimed at fostering deeper connection.
-    -----------------------------*/
-
-    // Element references
+    /********************************************************************
+     * The Journey of Understanding
+     * 
+     * Overview:
+     *  - Girlfriend inputs two things: her secret message and a punishment.
+     *  - The story is a choose-your-own-adventure narrative, defined by nodes.
+     *  - Each node has narrative text and a set of choices.
+     *  - The correct path (pre-determined in our story structure) leads to success,
+     *    where the secret message is revealed.
+     *  - Any wrong choice immediately leads to failure, and the punishment is shown.
+     *  - All data is stored in localStorage; the project is entirely in one file.
+     ********************************************************************/
+    
+    // DOM Elements
     const landing = document.getElementById("landing");
     const gfBtn = document.getElementById("gfBtn");
     const bfBtn = document.getElementById("bfBtn");
     
     const girlfriendSection = document.getElementById("girlfriendSection");
-    const reflectionInput = document.getElementById("reflectionInput");
-    const submitReflection = document.getElementById("submitReflection");
+    const secretMessageInput = document.getElementById("secretMessage");
+    const punishmentInput = document.getElementById("punishmentMessage");
+    const submitGF = document.getElementById("submitGF");
     
     const boyfriendSection = document.getElementById("boyfriendSection");
-    const timeline = document.getElementById("timeline");
+    const storyText = document.getElementById("storyText");
+    const choiceButtons = document.getElementById("choiceButtons");
     const backBtn = document.getElementById("backBtn");
     
-    // Data storage key
-    const REFLECTIONS_KEY = "elysian_reflections";
+    // LocalStorage Keys
+    const SECRET_KEY = "journey_secret";
+    const PUNISHMENT_KEY = "journey_punishment";
     
-    // Helper: Get saved reflections (array of objects with message and timestamp)
-    function getReflections() {
-      const data = localStorage.getItem(REFLECTIONS_KEY);
-      return data ? JSON.parse(data) : [];
-    }
+    // Story Nodes - Each node represents a stage in the interactive story.
+    // id: unique identifier
+    // text: narrative content
+    // choices: an array of objects { text, next, correct } where:
+    //   - text: button text shown for the choice
+    //   - next: id of the next node if this choice is taken
+    //   - correct: true if this is the "correct" path
+    const storyNodes = {
+      "start": {
+        text: "You find yourself at a crossroad in a dark, moonlit forest. A sign points left and right. Which way do you go?",
+        choices: [
+          { text: "Left, towards the whispering trees", next: "node1", correct: true },
+          { text: "Right, into the echoing void", next: "fail", correct: false }
+        ]
+      },
+      "node1": {
+        text: "The path leads to a clearing where a gentle stream flows. In the distance, you hear soft music. Do you follow the sound or rest by the water?",
+        choices: [
+          { text: "Follow the music", next: "node2", correct: true },
+          { text: "Rest by the stream", next: "fail", correct: false }
+        ]
+      },
+      "node2": {
+        text: "As you follow the melody, you come upon an ancient stone bridge guarded by a riddle carved into its surface. Do you attempt to solve the riddle?",
+        choices: [
+          { text: "Yes, try to solve it", next: "node3", correct: true },
+          { text: "No, cross the bridge without solving", next: "fail", correct: false }
+        ]
+      },
+      "node3": {
+        text: "The riddle speaks of lost moments and unspoken words. You answer with careful thought. The bridge shimmers as it opens. Now, you see a luminous door ahead. Do you enter?",
+        choices: [
+          { text: "Enter the door", next: "success", correct: true },
+          { text: "Turn back, unsure", next: "fail", correct: false }
+        ]
+      },
+      // Special nodes for endings
+      "success": {
+        text: "As you step through, a warm light envelops you. A voice whispers, 'I understand.' The truth of her feelings is revealed:",
+        choices: [] // End node; the secret message will be appended.
+      },
+      "fail": {
+        text: "Your journey ends in a quiet, unresolved darkness. A somber voice speaks:",
+        choices: [] // End node; the punishment will be appended.
+      }
+    };
     
-    // Helper: Save a new reflection
-    function saveReflection(message) {
-      const reflections = getReflections();
-      reflections.push({
-        message,
-        timestamp: new Date().toISOString()
-      });
-      localStorage.setItem(REFLECTIONS_KEY, JSON.stringify(reflections));
-    }
-    
-    // Landing page button events
+    // Landing Page Events
     gfBtn.addEventListener("click", () => {
       landing.classList.add("hidden");
       girlfriendSection.classList.remove("hidden");
     });
-    
     bfBtn.addEventListener("click", () => {
       landing.classList.add("hidden");
       boyfriendSection.classList.remove("hidden");
-      renderTimeline();
+      startStory();
     });
     
-    // Girlfriend submission event
-    submitReflection.addEventListener("click", () => {
-      const message = reflectionInput.value.trim();
-      if (!message) {
-        alert("Please enter a reflection.");
+    // Girlfriend Submission
+    submitGF.addEventListener("click", () => {
+      const secret = secretMessageInput.value.trim();
+      const punishment = punishmentInput.value.trim();
+      if (!secret || !punishment) {
+        alert("Please fill in both fields.");
         return;
       }
-      saveReflection(message);
-      alert("Reflection saved!");
-      reflectionInput.value = "";
-      // Return to landing page
+      localStorage.setItem(SECRET_KEY, secret);
+      localStorage.setItem(PUNISHMENT_KEY, punishment);
+      alert("Your input has been saved!");
       girlfriendSection.classList.add("hidden");
       landing.classList.remove("hidden");
     });
     
-    // Back button event
+    // Back Button Event for Boyfriend
     backBtn.addEventListener("click", () => {
       boyfriendSection.classList.add("hidden");
       landing.classList.remove("hidden");
     });
     
-    // Render timeline of reflections
-    function renderTimeline() {
-      const reflections = getReflections();
-      // Clear timeline
-      timeline.innerHTML = "";
-      // Sort reflections by timestamp (most recent first)
-      reflections.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      
-      reflections.forEach((item, index) => {
-        const card = document.createElement("div");
-        card.className = "timeline-card";
-        // Date formatting
-        const date = new Date(item.timestamp);
-        const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-        const formattedDate = date.toLocaleDateString("en-US", options);
-        
-        card.innerHTML = `<div class="card-date">${formattedDate}</div>
-                          <div class="card-message">${item.message}</div>`;
-        // Extra hidden details (for now, just a placeholder note)
-        const details = document.createElement("div");
-        details.className = "card-expanded hidden";
-        details.textContent = "Tap to expand for more insights...";
-        card.appendChild(details);
-        // Toggle expanded/collapsed on click
-        card.addEventListener("click", () => {
-          details.classList.toggle("hidden");
+    // Story Variables
+    let currentNodeId = "start";
+    
+    // Start the interactive story
+    function startStory() {
+      currentNodeId = "start";
+      renderNode(currentNodeId);
+    }
+    
+    // Render the current story node
+    function renderNode(nodeId) {
+      const node = storyNodes[nodeId];
+      if (!node) return;
+      storyText.textContent = node.text;
+      // Clear previous choices
+      choiceButtons.innerHTML = "";
+      // If there are no choices, it's an ending node
+      if (node.choices.length === 0) {
+        if (nodeId === "success") {
+          // Append the girlfriend's secret message
+          const secret = localStorage.getItem(SECRET_KEY) || "No message provided.";
+          storyText.textContent += "\n\n" + secret;
+        } else if (nodeId === "fail") {
+          const punishment = localStorage.getItem(PUNISHMENT_KEY) || "No punishment provided.";
+          storyText.textContent += "\n\n" + punishment;
+        }
+        return;
+      }
+      // Create buttons for each choice
+      node.choices.forEach(choice => {
+        const btn = document.createElement("button");
+        btn.textContent = choice.text;
+        btn.addEventListener("click", () => {
+          // If the choice is not correct, immediately go to fail node
+          if (!choice.correct) {
+            renderNode("fail");
+          } else {
+            // Proceed to next node
+            renderNode(choice.next);
+          }
         });
-        timeline.appendChild(card);
+        choiceButtons.appendChild(btn);
       });
     }
   </script>
