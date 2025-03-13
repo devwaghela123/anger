@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Decode Her Anger</title>
+  <title>Decode Her Anger - Hugging Face Powered</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f2f2f2;
-      color: #333;
+      background: #f9f9f9;
       margin: 20px;
+      color: #333;
     }
     h1, h2 {
       text-align: center;
     }
     #landing, #girlfriendSection, #boyfriendSection {
-      max-width: 500px;
-      margin: 0 auto;
+      max-width: 600px;
+      margin: 20px auto;
       padding: 20px;
       background: #fff;
       border-radius: 8px;
@@ -45,15 +45,19 @@
     button:hover {
       background: #005fa3;
     }
-    .answerBtn {
-      width: 120px;
+    .optionBtn {
+      display: block;
+      width: 90%;
+      margin: 10px auto;
+      text-align: left;
     }
-    #questionSection, #resultSection, #noAngerMsg {
+    #questionContainer, #resultSection, #noAngerMsg {
       margin-top: 20px;
     }
   </style>
 </head>
 <body>
+  <!-- Landing Page -->
   <div id="landing">
     <h1>Don't know why your girlfriend is mad?</h1>
     <p>"Don't know why she's mad? You're at the right place! She already told us why. You just have to decode it!"</p>
@@ -61,6 +65,7 @@
     <button id="bfBtn">I'm the Boyfriend</button>
   </div>
 
+  <!-- Girlfriend Section -->
   <div id="girlfriendSection" style="display:none;">
     <h2>Girlfriend: Tell us what's wrong</h2>
     <textarea id="angerInput" placeholder="Why are you mad?"></textarea>
@@ -68,15 +73,16 @@
     <button id="submitAnger">Submit</button>
   </div>
 
+  <!-- Boyfriend Section -->
   <div id="boyfriendSection" style="display:none;">
-    <h2>Decode the Anger</h2>
+    <h2>Decode Her Anger</h2>
     <div id="noAngerMsg" style="display:none;">
       <p>She's not mad right now – enjoy the silence before the storm!</p>
     </div>
-    <div id="questionSection" style="display:none;">
+    <div id="questionContainer" style="display:none;">
       <p id="questionText"></p>
-      <button class="answerBtn" data-answer="yes">Yes</button>
-      <button class="answerBtn" data-answer="no">No</button>
+      <div id="options"></div>
+      <p>Strike Count: <span id="strikeCount">0</span> / 3</p>
     </div>
     <div id="resultSection" style="display:none;">
       <p id="resultText"></p>
@@ -84,35 +90,48 @@
   </div>
 
   <script>
-    // Landing page buttons
+    // --- Element References ---
     const gfBtn = document.getElementById('gfBtn');
     const bfBtn = document.getElementById('bfBtn');
     const landing = document.getElementById('landing');
     const girlfriendSec = document.getElementById('girlfriendSection');
     const boyfriendSec = document.getElementById('boyfriendSection');
-    
+
+    // Girlfriend input elements
+    const angerInput = document.getElementById('angerInput');
+    const punishmentInput = document.getElementById('punishmentInput');
+    const submitAnger = document.getElementById('submitAnger');
+
+    // Boyfriend decoding elements
+    const noAngerMsg = document.getElementById('noAngerMsg');
+    const questionContainer = document.getElementById('questionContainer');
+    const questionText = document.getElementById('questionText');
+    const optionsDiv = document.getElementById('options');
+    const strikeDisplay = document.getElementById('strikeCount');
+    const resultSection = document.getElementById('resultSection');
+    const resultText = document.getElementById('resultText');
+
+    // --- Landing Page Logic ---
     gfBtn.addEventListener('click', () => {
       landing.style.display = 'none';
       girlfriendSec.style.display = 'block';
     });
-    
+
     bfBtn.addEventListener('click', () => {
       landing.style.display = 'none';
       boyfriendSec.style.display = 'block';
-      // Check if a reason exists
       const storedReason = localStorage.getItem('angerReason');
       if (!storedReason) {
-        document.getElementById('noAngerMsg').style.display = 'block';
+        noAngerMsg.style.display = 'block';
       } else {
         startDecoding();
       }
     });
-    
-    // Girlfriend's submission
-    const submitAnger = document.getElementById('submitAnger');
+
+    // --- Girlfriend Submission ---
     submitAnger.addEventListener('click', () => {
-      const anger = document.getElementById('angerInput').value.trim();
-      const punishment = document.getElementById('punishmentInput').value.trim();
+      const anger = angerInput.value.trim();
+      const punishment = punishmentInput.value.trim();
       if (anger === '' || punishment === '') {
         alert("Please fill in both fields.");
         return;
@@ -120,99 +139,139 @@
       localStorage.setItem('angerReason', anger);
       localStorage.setItem('punishment', punishment);
       alert("Your input has been recorded!");
-      // Return to landing screen after submission
       girlfriendSec.style.display = 'none';
       landing.style.display = 'block';
     });
-    
-    // --------- Boyfriend Decoding Flow -----------
-    let questions = [];
-    let currentQuestionIndex = 0;
+
+    // --- Boyfriend Decoding Variables ---
+    let currentQuestion = null;
     let strikeCount = 0;
     const maxStrikes = 3;
-    
-    // Auto-generate questions based on the reason text
-    function generateQuestions(reasonText) {
-      const qs = [];
-      const lowerReason = reasonText.toLowerCase();
-      
-      if (lowerReason.includes("forgot")) {
-        qs.push({ question: "Did you forget something important recently?", expected: "yes" });
-      }
-      if (lowerReason.includes("birthday")) {
-        qs.push({ question: "Does it relate to a birthday or special day?", expected: "yes" });
-      }
-      if (lowerReason.includes("late") || lowerReason.includes("week")) {
-        qs.push({ question: "Was something done too late or delayed?", expected: "yes" });
-      }
-      // If no keywords found, add a default question
-      if (qs.length === 0) {
-        qs.push({ question: "Do you think you did something wrong recently?", expected: "yes" });
-      }
-      return qs;
-    }
-    
-    function startDecoding() {
-      const reason = localStorage.getItem('angerReason');
-      questions = generateQuestions(reason);
-      currentQuestionIndex = 0;
-      strikeCount = 0;
-      document.getElementById('questionSection').style.display = 'block';
-      showQuestion();
-    }
-    
-    function showQuestion() {
-      if (currentQuestionIndex >= questions.length) {
-        decodeSuccess();
-      } else {
-        const q = questions[currentQuestionIndex];
-        document.getElementById('questionText').textContent = q.question;
-      }
-    }
-    
-    // Attach answer button logic
-    const answerButtons = document.querySelectorAll('.answerBtn');
-    answerButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const answer = btn.getAttribute('data-answer');
-        checkAnswer(answer);
-      });
-    });
-    
-    function checkAnswer(answer) {
-      const q = questions[currentQuestionIndex];
-      if (answer === q.expected) {
-        // Correct answer: move to next question
-        currentQuestionIndex++;
-        if (currentQuestionIndex < questions.length) {
-          showQuestion();
-        } else {
-          decodeSuccess();
+    let conversationLog = ""; // Context for successive question generation
+
+    // --- Hugging Face API Call to Generate a Question ---
+    async function generateQuestionHF(reasonText, log) {
+      // Using Hugging Face's Inference API endpoint for a generative model.
+      const apiUrl = "https://api-inference.huggingface.co/models/distilgpt2"; // You can change the model if needed
+      const hfApiKey = "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"; // Replace with your Hugging Face API key
+
+      // Build a prompt instructing the model to output a JSON object
+      const prompt = `Context:
+Reason: "${reasonText}"
+Conversation so far: "${log}"
+Generate a multiple-choice question to help decode why she is mad. Return a valid JSON object with the keys:
+- "question": a string containing the question.
+- "options": an array of 4 string options.
+- "correctIndex": an integer between 0 and 3 indicating the correct answer.
+- "isDecoding": a boolean (true if answering correctly should immediately reveal the reason).
+Return only the JSON.`;
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${hfApiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            inputs: prompt,
+            parameters: { max_new_tokens: 150, temperature: 0.7 }
+          })
+        });
+        if (!response.ok) {
+          throw new Error("Hugging Face API error");
         }
+        const data = await response.json();
+        // The API returns an array of generated texts
+        const generatedText = data[0].generated_text.trim();
+        // Try parsing as JSON
+        const questionObj = JSON.parse(generatedText);
+        return questionObj;
+      } catch (error) {
+        console.error("Error calling Hugging Face API:", error);
+        // Fallback default question in case of error
+        return {
+          question: "Did you forget something important?",
+          options: ["I remembered everything", "I forgot something", "Not sure", "I was distracted"],
+          correctIndex: 1,
+          isDecoding: false
+        };
+      }
+    }
+
+    // --- Start Decoding Process ---
+    async function startDecoding() {
+      const reason = localStorage.getItem('angerReason');
+      conversationLog = `Anger reason provided: "${reason}". `;
+      strikeCount = 0;
+      strikeDisplay.textContent = strikeCount;
+      resultSection.style.display = 'none';
+      questionContainer.style.display = 'block';
+      await loadNextQuestion();
+    }
+
+    // --- Load Next Question Using Hugging Face API ---
+    async function loadNextQuestion() {
+      const reason = localStorage.getItem('angerReason');
+      currentQuestion = await generateQuestionHF(reason, conversationLog);
+      conversationLog += `Generated question: "${currentQuestion.question}". `;
+      displayQuestion();
+    }
+
+    // --- Display Current Question & Options ---
+    function displayQuestion() {
+      if (!currentQuestion) {
+        decodeFailure();
+        return;
+      }
+      questionText.textContent = currentQuestion.question;
+      optionsDiv.innerHTML = "";
+      currentQuestion.options.forEach((option, index) => {
+        const btn = document.createElement('button');
+        btn.textContent = option;
+        btn.classList.add('optionBtn');
+        btn.addEventListener('click', () => {
+          checkAnswer(index);
+        });
+        optionsDiv.appendChild(btn);
+      });
+    }
+
+    // --- Check the Boyfriend's Answer ---
+    async function checkAnswer(selectedIndex) {
+      conversationLog += `Boyfriend answered: "${selectedIndex}" for question "${currentQuestion.question}". `;
+      if (selectedIndex === currentQuestion.correctIndex) {
+        if (currentQuestion.isDecoding) {
+          decodeSuccess();
+          return;
+        }
+        await loadNextQuestion();
       } else {
-        // Incorrect answer: increment strike
         strikeCount++;
+        strikeDisplay.textContent = strikeCount;
         if (strikeCount >= maxStrikes) {
           decodeFailure();
         } else {
-          alert("Not quite. Try again!");
-          // Optionally, you can repeat the same question.
+          alert("Wrong answer! Be extra careful with the next one.");
+          await loadNextQuestion();
         }
       }
     }
-    
+
+    // --- Reveal the Real Reason on Success ---
     function decodeSuccess() {
-      document.getElementById('questionSection').style.display = 'none';
-      document.getElementById('resultSection').style.display = 'block';
+      questionContainer.style.display = 'none';
+      resultSection.style.display = 'block';
       const reason = localStorage.getItem('angerReason');
-      document.getElementById('resultText').textContent = "Success! She is mad because: " + reason;
+      resultText.textContent = "Success! She is mad because: " + reason;
     }
-    
+
+    // --- Reveal Punishment on Failure ---
     function decodeFailure() {
-      document.getElementById('questionSection').style.display = 'none';
-      document.getElementById('resultSection').style.display = 'block';
+      questionContainer.style.display = 'none';
+      resultSection.style.display = 'block';
       const punishment = localStorage.getItem('punishment');
-      document.getElementById('resultText').textContent = "Decoding failed. Your punishment: " + punishment;
+      resultText.textContent = "Decoding failed. Your punishment: " + punishment;
     }
   </script>
 </body>
