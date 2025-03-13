@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Decode Her Anger - Dynamic Free-Text Edition</title>
+  <title>Decode Her Anger - Dynamic Free-Text Edition (Improved)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -77,7 +77,7 @@
     </div>
     <div id="questionContainer" style="display:none;">
       <p id="questionText"></p>
-      <!-- Boyfriend answer input -->
+      <!-- Free-text input for boyfriend's answer -->
       <input type="text" id="bfAnswerInput" placeholder="Type your answer here">
       <button id="submitBFAnswer">Submit Answer</button>
       <p>Question Count: <span id="questionCount">0</span> / 11</p>
@@ -88,6 +88,14 @@
   </div>
 
   <script>
+    /*******************************
+    * Cautionary Comments:
+    * - This version uses the Hugging Face Inference API with a higher temperature (0.9) to encourage diverse outputs.
+    * - If the generated question is identical to the previous one, the code will retry (up to 3 attempts) before accepting it.
+    * - The conversation log is updated on each API call to influence future question generation.
+    * - The game ends if the boyfriend goes through more than 11 questions without the evaluation returning "onPoint": true.
+    *******************************/
+
     // --- Element References ---
     const gfBtn = document.getElementById('gfBtn');
     const bfBtn = document.getElementById('bfBtn');
@@ -95,7 +103,7 @@
     const girlfriendSec = document.getElementById('girlfriendSection');
     const boyfriendSec = document.getElementById('boyfriendSection');
 
-    // Girlfriend input elements
+    // Girlfriend inputs
     const angerInput = document.getElementById('angerInput');
     const punishmentInput = document.getElementById('punishmentInput');
     const submitAnger = document.getElementById('submitAnger');
@@ -115,9 +123,10 @@
     let questionCount = 0;
     const maxQuestions = 11;
     let currentQuestion = null;
+    let previousQuestion = "";
     // Hugging Face API key (inserted everywhere)
     const hfApiKey = "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";
-    // Hugging Face Inference API endpoint (using distilgpt2 here, adjust model as needed)
+    // Hugging Face Inference API endpoint using distilgpt2; you can change the model if needed.
     const hfApiUrl = "https://api-inference.huggingface.co/models/distilgpt2";
 
     // --- Landing Page Logic ---
@@ -152,15 +161,15 @@
       landing.style.display = 'block';
     });
 
-    // --- Hugging Face API Call to Generate a Dynamic Question ---
-    async function generateQuestionHF(reasonText, log) {
+    // --- Function to Call Hugging Face API to Generate a Question ---
+    async function generateQuestionHF(reasonText, log, retryCount = 0) {
       const prompt = `Context:
 Anger Reason: "${reasonText}"
 Conversation Log: "${log}"
-Generate a decoding question to help the boyfriend figure out why she is mad.
+Generate a unique decoding question to help the boyfriend figure out why she is mad.
 Return a valid JSON object with one key:
   - "question": a string containing the question.
-Do not include extra text.`;
+Do not include any extra text.`;
       
       try {
         const response = await fetch(hfApiUrl, {
@@ -171,7 +180,7 @@ Do not include extra text.`;
           },
           body: JSON.stringify({
             inputs: prompt,
-            parameters: { max_new_tokens: 100, temperature: 0.7 }
+            parameters: { max_new_tokens: 100, temperature: 0.9 }
           })
         });
         if (!response.ok) {
@@ -180,25 +189,31 @@ Do not include extra text.`;
         const data = await response.json();
         const generatedText = data[0].generated_text.trim();
         const questionObj = JSON.parse(generatedText);
+        // Check for duplicate question
+        if (questionObj.question === previousQuestion && retryCount < 3) {
+          console.warn("Duplicate question detected. Retrying...");
+          return await generateQuestionHF(reasonText, log, retryCount + 1);
+        }
+        previousQuestion = questionObj.question;
         return questionObj;
       } catch (error) {
         console.error("Error generating question:", error);
-        // Fallback default question
-        return { question: "Do you think you overlooked an important detail recently?" };
+        // Fallback default question if API fails
+        return { question: "Could it be that you overlooked something important?" };
       }
     }
 
-    // --- Hugging Face API Call to Evaluate Boyfriend's Answer ---
+    // --- Function to Call Hugging Face API to Evaluate Boyfriend's Answer ---
     async function evaluateAnswerHF(reasonText, log, answerText) {
       const prompt = `Context:
 Anger Reason: "${reasonText}"
 Conversation Log: "${log}"
 The boyfriend answered: "${answerText}".
-Determine if this answer is "on point" (i.e. close enough to decoding why she is mad).
+Determine if this answer is "on point" (i.e., sufficiently close to decoding why she is mad).
 Return a valid JSON object with one key:
   - "onPoint": either true or false.
-Do not include extra text.`;
-
+Do not include any extra text.`;
+      
       try {
         const response = await fetch(hfApiUrl, {
           method: "POST",
@@ -208,7 +223,7 @@ Do not include extra text.`;
           },
           body: JSON.stringify({
             inputs: prompt,
-            parameters: { max_new_tokens: 50, temperature: 0.7 }
+            parameters: { max_new_tokens: 50, temperature: 0.9 }
           })
         });
         if (!response.ok) {
@@ -220,13 +235,12 @@ Do not include extra text.`;
         return evalObj;
       } catch (error) {
         console.error("Error evaluating answer:", error);
-        // Fallback: consider the answer not on point
+        // Fallback: assume answer is not on point
         return { onPoint: false };
       }
     }
 
     // --- Game Flow Functions ---
-
     async function startDecoding() {
       const reason = localStorage.getItem('angerReason');
       conversationLog = `Anger Reason provided: "${reason}". `;
@@ -280,7 +294,6 @@ Do not include extra text.`;
     }
 
     // --- Game End Functions ---
-
     function decodeSuccess() {
       questionContainer.style.display = 'none';
       resultSection.style.display = 'block';
