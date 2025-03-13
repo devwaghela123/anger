@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Decode Her Anger - Dynamic Hugging Face Edition</title>
+  <title>Decode Her Anger - Dynamic Free-Text Edition</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -22,14 +22,16 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       text-align: center;
     }
-    textarea {
+    textarea, input[type="text"] {
       width: 100%;
-      height: 80px;
       margin: 10px 0;
       padding: 10px;
       font-size: 16px;
       border: 1px solid #ccc;
       border-radius: 4px;
+    }
+    textarea {
+      height: 80px;
       resize: none;
     }
     button {
@@ -44,12 +46,6 @@
     }
     button:hover {
       background: #005fa3;
-    }
-    .optionBtn {
-      display: block;
-      width: 90%;
-      margin: 10px auto;
-      text-align: left;
     }
     #questionContainer, #resultSection, #noAngerMsg {
       margin-top: 20px;
@@ -81,7 +77,9 @@
     </div>
     <div id="questionContainer" style="display:none;">
       <p id="questionText"></p>
-      <div id="options"></div>
+      <!-- Boyfriend answer input -->
+      <input type="text" id="bfAnswerInput" placeholder="Type your answer here">
+      <button id="submitBFAnswer">Submit Answer</button>
       <p>Question Count: <span id="questionCount">0</span> / 11</p>
     </div>
     <div id="resultSection" style="display:none;">
@@ -97,7 +95,7 @@
     const girlfriendSec = document.getElementById('girlfriendSection');
     const boyfriendSec = document.getElementById('boyfriendSection');
 
-    // Girlfriend inputs
+    // Girlfriend input elements
     const angerInput = document.getElementById('angerInput');
     const punishmentInput = document.getElementById('punishmentInput');
     const submitAnger = document.getElementById('submitAnger');
@@ -106,7 +104,8 @@
     const noAngerMsg = document.getElementById('noAngerMsg');
     const questionContainer = document.getElementById('questionContainer');
     const questionText = document.getElementById('questionText');
-    const optionsDiv = document.getElementById('options');
+    const bfAnswerInput = document.getElementById('bfAnswerInput');
+    const submitBFAnswer = document.getElementById('submitBFAnswer');
     const questionCountDisplay = document.getElementById('questionCount');
     const resultSection = document.getElementById('resultSection');
     const resultText = document.getElementById('resultText');
@@ -116,9 +115,9 @@
     let questionCount = 0;
     const maxQuestions = 11;
     let currentQuestion = null;
-    // Our Hugging Face API key (inserted everywhere)
+    // Hugging Face API key (inserted everywhere)
     const hfApiKey = "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";
-    // Using Hugging Face Inference API endpoint (we use distilgpt2; adjust model as needed)
+    // Hugging Face Inference API endpoint (using distilgpt2 here, adjust model as needed)
     const hfApiUrl = "https://api-inference.huggingface.co/models/distilgpt2";
 
     // --- Landing Page Logic ---
@@ -153,20 +152,16 @@
       landing.style.display = 'block';
     });
 
-    // --- Functions to Call Hugging Face API ---
-
-    // Generates a dynamic multiple-choice question
+    // --- Hugging Face API Call to Generate a Dynamic Question ---
     async function generateQuestionHF(reasonText, log) {
       const prompt = `Context:
 Anger Reason: "${reasonText}"
 Conversation Log: "${log}"
-Generate a multiple-choice question (with 4 options) that helps the boyfriend decode why she is mad.
-Return the result as a JSON object with keys:
-  - "question": a string.
-  - "options": an array of 4 strings.
-There is no absolute "correct" answer; instead, your answer evaluation will be based on closeness to the reason.
-Do not output extra text.`;
-
+Generate a decoding question to help the boyfriend figure out why she is mad.
+Return a valid JSON object with one key:
+  - "question": a string containing the question.
+Do not include extra text.`;
+      
       try {
         const response = await fetch(hfApiUrl, {
           method: "POST",
@@ -176,37 +171,33 @@ Do not output extra text.`;
           },
           body: JSON.stringify({
             inputs: prompt,
-            parameters: { max_new_tokens: 150, temperature: 0.7 }
+            parameters: { max_new_tokens: 100, temperature: 0.7 }
           })
         });
         if (!response.ok) {
           throw new Error("Hugging Face API error");
         }
         const data = await response.json();
-        // Assume the generated text is our JSON object
         const generatedText = data[0].generated_text.trim();
         const questionObj = JSON.parse(generatedText);
         return questionObj;
       } catch (error) {
         console.error("Error generating question:", error);
         // Fallback default question
-        return {
-          question: "Do you think you overlooked something important?",
-          options: ["I have a good memory", "Maybe I missed a detail", "I am sure I did nothing wrong", "Not sure at all"]
-        };
+        return { question: "Do you think you overlooked an important detail recently?" };
       }
     }
 
-    // Evaluates the boyfriend's answer against the anger reason
-    async function evaluateAnswerHF(reasonText, log, selectedOption) {
+    // --- Hugging Face API Call to Evaluate Boyfriend's Answer ---
+    async function evaluateAnswerHF(reasonText, log, answerText) {
       const prompt = `Context:
 Anger Reason: "${reasonText}"
 Conversation Log: "${log}"
-The boyfriend answered: "${selectedOption}".
-Based on the context, determine if the boyfriend's answer is "on point" (i.e. close enough to decoding why she is mad).
+The boyfriend answered: "${answerText}".
+Determine if this answer is "on point" (i.e. close enough to decoding why she is mad).
 Return a valid JSON object with one key:
   - "onPoint": either true or false.
-Do not output extra text.`;
+Do not include extra text.`;
 
       try {
         const response = await fetch(hfApiUrl, {
@@ -236,7 +227,6 @@ Do not output extra text.`;
 
     // --- Game Flow Functions ---
 
-    // Starts the decoding process
     async function startDecoding() {
       const reason = localStorage.getItem('angerReason');
       conversationLog = `Anger Reason provided: "${reason}". `;
@@ -244,10 +234,10 @@ Do not output extra text.`;
       updateQuestionCount();
       resultSection.style.display = 'none';
       questionContainer.style.display = 'block';
+      bfAnswerInput.value = "";
       await loadNextQuestion();
     }
 
-    // Loads the next dynamic question
     async function loadNextQuestion() {
       const reason = localStorage.getItem('angerReason');
       currentQuestion = await generateQuestionHF(reason, conversationLog);
@@ -255,43 +245,35 @@ Do not output extra text.`;
       displayQuestion(currentQuestion);
     }
 
-    // Displays the current question and its options
     function displayQuestion(qObj) {
-      if (!qObj) {
+      if (!qObj || !qObj.question) {
         decodeFailure();
         return;
       }
       questionText.textContent = qObj.question;
-      optionsDiv.innerHTML = "";
-      qObj.options.forEach((option, index) => {
-        const btn = document.createElement('button');
-        btn.textContent = option;
-        btn.classList.add('optionBtn');
-        btn.addEventListener('click', () => handleAnswer(option));
-        optionsDiv.appendChild(btn);
-      });
+      bfAnswerInput.value = "";
     }
 
-    // Handles the boyfriend's answer
-    async function handleAnswer(selectedOption) {
-      conversationLog += `Boyfriend answered: "${selectedOption}". `;
-      // Evaluate the answer using the HF API
+    submitBFAnswer.addEventListener('click', async () => {
+      const answerText = bfAnswerInput.value.trim();
+      if (answerText === "") {
+        alert("Please type an answer.");
+        return;
+      }
+      conversationLog += `Boyfriend answered: "${answerText}". `;
       const reason = localStorage.getItem('angerReason');
-      const evalResult = await evaluateAnswerHF(reason, conversationLog, selectedOption);
+      const evalResult = await evaluateAnswerHF(reason, conversationLog, answerText);
       questionCount++;
       updateQuestionCount();
-
+      
       if (evalResult.onPoint === true) {
-        // If onPoint, decoding is successful
         decodeSuccess();
       } else if (questionCount >= maxQuestions) {
-        // Exceeded maximum questions without onPoint answer
         decodeFailure();
       } else {
-        // Otherwise, load next question
         await loadNextQuestion();
       }
-    }
+    });
 
     function updateQuestionCount() {
       questionCountDisplay.textContent = questionCount;
